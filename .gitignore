@@ -7,7 +7,9 @@
 .idea/
 .vscode/
 
-
+backups/
+*.sql
+*.tar.gz
 *.user
 *.suo
 *.userosscache
