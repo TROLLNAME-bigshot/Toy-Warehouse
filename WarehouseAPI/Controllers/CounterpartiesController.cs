@@ -68,7 +68,13 @@ public class CounterpartiesController : ControllerBase
         var created = await _counterpartyService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
+    private readonly ILogger<CounterpartiesController> _logger;
 
+    public CounterpartiesController(..., ILogger<CounterpartiesController> logger)
+    {
+        ...
+    _logger = logger;
+    }
     // PUT api/counterparties/5
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] CounterpartyUpdateDto dto)

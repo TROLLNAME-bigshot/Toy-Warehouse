@@ -23,7 +23,13 @@ public class StockController : ControllerBase
         var stocks = await _stockService.GetAllAsync();
         return Ok(stocks);
     }
+    private readonly ILogger<StockController> _logger;
 
+    public StockController(..., ILogger<StockController> logger)
+    {
+        ...
+    _logger = logger;
+    }
     // GET api/stock/5
     [HttpGet("{productId:int}")]
     public async Task<IActionResult> GetByProductId(int productId)

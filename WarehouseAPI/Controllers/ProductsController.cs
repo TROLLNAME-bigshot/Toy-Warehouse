@@ -54,7 +54,13 @@ public class ProductsController : ControllerBase
         [ProducesResponseType(500)]
         public async Task<IActionResult> Create([FromBody] ProductCreateDto dto)
     }
+    private readonly ILogger<ProductsController> _logger;
 
+    public ProductsController(..., ILogger<ProductsController> logger)
+    {
+        ...
+    _logger = logger;
+    }
     // PUT api/products/5
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] ProductUpdateDto dto)

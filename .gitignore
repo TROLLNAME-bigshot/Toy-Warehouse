@@ -13,7 +13,7 @@
 *.userosscache
 *.sln.docstates
 
-
+logs/
 *.log
 
 

@@ -6,6 +6,14 @@ using WarehouseAPI.Repositories;
 using WarehouseAPI.Repositories.Interfaces;
 using WarehouseAPI.Services;
 using WarehouseAPI.Services.Interfaces;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 10485760, retainedFileCountLimit: 5)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,3 +110,4 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+Log.CloseAndFlush();
