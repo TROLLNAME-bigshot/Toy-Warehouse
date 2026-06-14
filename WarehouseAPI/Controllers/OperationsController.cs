@@ -6,6 +6,8 @@ namespace WarehouseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
+[Consumes("application/json")]
 public class OperationsController : ControllerBase
 {
     private readonly IOperationService _operationService;

@@ -13,7 +13,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 // PostgreSQL — единственная поддерживаемая СУБД
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
-
+DotNetEnv.Env.Load();
 // CORS
 builder.Services.AddCors(options =>
 {
@@ -44,7 +44,12 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidationFilter>();
 });
-
+builder.Services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -77,6 +82,7 @@ app.MapGet("/", () => Results.Ok(new { service = "WarehouseAPI", status = "runni
 app.MapGet("/health", () => Results.Ok("ok"));
 
 app.MapControllers();
+
 
 // Применяем миграции автоматически при запуске
 using (var scope = app.Services.CreateScope())

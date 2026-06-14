@@ -428,6 +428,88 @@ API будет доступен по адресам:
   "traceId": "0HN7K2J1L4Q3A:00000001"
 }
 ```
+## Технологии
+
+- .NET 10
+- ASP.NET Core Web API
+- Entity Framework Core 10
+- PostgreSQL 15+
+- Swagger / OpenAPI
+- Docker
+
+## Архитектура
+
+Проект построен по слоистой архитектуре:
+
+1. **Controllers** — принимают HTTP-запросы
+2. **Services** — бизнес-логика
+3. **Repositories** — доступ к данным
+4. **DbContext** — работа с PostgreSQL
+
+Все ошибки обрабатываются глобально через Middleware.
+
+## Структура проекта
+
+WarehouseAPI/
+├── Controllers/     # HTTP-эндпоинты
+├── Services/        # Бизнес-логика
+├── Repositories/    # Доступ к БД
+├── Models/          # Сущности EF Core
+├── DTOs/            # Объекты передачи данных
+├── Data/            # DbContext
+├── Migrations/      # Миграции БД
+└── Middleware/      # Глобальная обработка ошибок
+
+## Быстрый старт
+
+### Обычный запуск
+
+1. Установи PostgreSQL 15+
+2. Создай базу данных `warehouse_db`
+3. Настрой строку подключения в `appsettings.json`
+4. Выполни миграции: `dotnet ef database update`
+5. Запусти: `dotnet run`
+
+### Запуск через Docker
+
+docker-compose up -d
+docker exec warehouse_api dotnet ef database update
+
+API будет доступен по адресу: http://localhost:5023
+Swagger UI: http://localhost:5023/swagger
+
+## Переменные окружения
+
+ConnectionStrings__DefaultConnection - строка подключения к PostgreSQL
+ASPNETCORE_ENVIRONMENT - среда (Development / Production)
+ASPNETCORE_URLS - URL для прослушивания
+
+Пример .env файла:
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=warehouse_db
+DB_USER=postgres
+DB_PASSWORD=your_password
+ASPNETCORE_ENVIRONMENT=Development
+
+## Обработка ошибок
+
+Все ошибки возвращаются в формате:
+
+{
+  "status": 400,
+  "message": "Текст ошибки",
+  "path": "/api/...",
+  "traceId": "..."
+}
+
+Коды ответов:
+200 - успех
+201 - создано
+400 - ошибка валидации
+404 - не найдено
+500 - внутренняя ошибка сервера
 
 | HTTP-код | Причина |
 |---|---|

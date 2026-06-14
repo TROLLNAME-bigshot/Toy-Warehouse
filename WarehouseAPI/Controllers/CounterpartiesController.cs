@@ -7,6 +7,8 @@ namespace WarehouseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
+[Consumes("application/json")]
 public class CounterpartiesController : ControllerBase
 {
     private readonly ICounterpartyService _counterpartyService;

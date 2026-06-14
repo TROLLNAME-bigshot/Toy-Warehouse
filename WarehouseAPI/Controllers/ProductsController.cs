@@ -6,6 +6,8 @@ namespace WarehouseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
+[Consumes("application/json")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -21,7 +23,12 @@ public class ProductsController : ControllerBase
     {
         var products = await _productService.GetAllAsync();
         return Ok(products);
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<ProductResponseDto>), 200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetAll()
     }
+
 
     // GET api/products/5
     [HttpGet("{id:int}")]
@@ -29,6 +36,10 @@ public class ProductsController : ControllerBase
     {
         var product = await _productService.GetByIdAsync(id);
         return product is null ? NotFound() : Ok(product);
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<ProductResponseDto>), 200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetById()
     }
 
     // POST api/products
@@ -37,6 +48,11 @@ public class ProductsController : ControllerBase
     {
         var created = await _productService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        [HttpPost]
+        [ProducesResponseType(typeof(ProductResponseDto), 201)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Create([FromBody] ProductCreateDto dto)
     }
 
     // PUT api/products/5
@@ -45,6 +61,11 @@ public class ProductsController : ControllerBase
     {
         var updated = await _productService.UpdateAsync(id, dto);
         return updated is null ? NotFound() : Ok(updated);
+        [HttpPost]
+        [ProducesResponseType(typeof(ProductResponseDto), 201)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Update([FromBody] ProductCreateDto dto)
     }
 
     // DELETE api/products/5
@@ -53,5 +74,11 @@ public class ProductsController : ControllerBase
     {
         var deleted = await _productService.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
+        [HttpPost]
+        [ProducesResponseType(typeof(ProductResponseDto), 201)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Delete([FromBody] ProductCreateDto dto)
     }
+
 }
