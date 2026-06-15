@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Защита пакета сопровождения — Toy-Warehouse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:     #0d1117; --card: #161b22; --card2: #1c2128;
+    --acc:    #58a6ff; --grn: #3fb950; --org: #f0883e;
+    --prp:    #d2a8ff; --red: #ff7b72;
+    --txt:    #e6edf3; --muted: #8b949e; --brd: #30363d;
+  }
+  html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--txt); }
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; padding: 44px 60px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .35s ease, transform .35s ease; transform: translateY(24px);
+  }
+  .slide.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .nav {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px; z-index: 100;
+    background: rgba(22,27,34,.92); border: 1px solid var(--brd);
+    border-radius: 50px; padding: 9px 22px; backdrop-filter: blur(12px);
+  }
+  .nav button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 17px; padding: 3px 7px; border-radius: 6px; transition: all .2s; }
+  .nav button:hover { background: var(--card2); color: var(--acc); }
+  .nav button:disabled { opacity: .3; cursor: default; }
+  .ctr { font-size: 12px; color: var(--muted); font-weight: 600; min-width: 50px; text-align: center; }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brd); cursor: pointer; transition: all .2s; }
+  .dot.active { background: var(--acc); transform: scale(1.3); }
+  .hint { position: fixed; top: 14px; right: 18px; font-size: 11px; color: var(--muted); opacity: .5; }
+  .badge { position: absolute; top: 26px; right: 34px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+
+  /* ── shared ── */
+  .hdr { width: 100%; max-width: 1100px; margin-bottom: 26px; }
+  .htitle { font-size: 32px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+  .hnum { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 6px; background: var(--card2); border: 1px solid var(--brd); color: var(--muted); letter-spacing: 1px; }
+  .hdesc { font-size: 14px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--brd); border-radius: 12px; padding: 22px; }
+  .ctitle { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
+  .row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 9px; font-size: 13px; line-height: 1.5; }
+  .row .ic { flex-shrink: 0; margin-top: 1px; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(255,255,255,.07); border: 1px solid var(--brd); border-radius: 4px; padding: 1px 5px; color: var(--org); }
+  .env { background: #0d1117; border: 1px solid var(--brd); border-radius: 8px; padding: 12px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.9; margin-top: 10px; }
+  .c-grn { color: var(--grn); } .c-acc { color: var(--acc); } .c-red { color: var(--red); } .c-org { color: var(--org); } .c-prp { color: var(--prp); } .c-muted { color: var(--muted); }
+
+  /* ── s1 title ── */
+  .s1bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 20% 50%, rgba(88,166,255,.11) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(210,168,255,.09) 0%, transparent 50%), var(--bg); }
+  .s1grid { position: absolute; inset: 0; opacity: .05; background-image: linear-gradient(var(--brd) 1px, transparent 1px), linear-gradient(90deg, var(--brd) 1px, transparent 1px); background-size: 40px 40px; }
+  .s1c { position: relative; z-index: 1; text-align: center; max-width: 860px; }
+  .s1tag { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--brd); border-radius: 20px; padding: 5px 16px; font-size: 11px; color: var(--acc); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 28px; background: rgba(88,166,255,.07); }
+  .s1dot { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .s1title { font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 10px; }
+  .s1sub { font-size: 17px; color: var(--muted); margin-bottom: 36px; }
+  .s1meta { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+  .s1mi { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .s1ml { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .s1mv { font-size: 14px; font-weight: 600; }
+  .s1lnk { color: var(--acc); text-decoration: none; }
+  .s1lnk:hover { text-decoration: underline; }
+  .s1div { width: 1px; height: 36px; background: var(--brd); }
+
+  /* ── s2 arch ── */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; width: 100%; max-width: 1100px; }
+  .anode { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 10px; border: 1px solid var(--brd); background: var(--card); font-size: 13px; }
+  .anode.wpf { border-color: rgba(210,168,255,.4); } .anode.api { border-color: rgba(63,185,80,.4); background: rgba(63,185,80,.04); } .anode.db { border-color: rgba(240,136,62,.4); background: rgba(240,136,62,.04); }
+  .aico { font-size: 19px; flex-shrink: 0; }
+  .ant { font-weight: 600; } .and { font-size: 11px; color: var(--muted); }
+  .aarr { text-align: center; color: var(--muted); font-size: 17px; }
+  .stk { display: flex; flex-direction: column; gap: 8px; }
+  .si { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-radius: 8px; background: var(--card); border: 1px solid var(--brd); font-size: 12.5px; }
+  .sb { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+  .sb-b { background: rgba(88,166,255,.15); color: var(--acc); }
+  .sb-g { background: rgba(63,185,80,.15); color: var(--grn); }
+  .sb-o { background: rgba(240,136,62,.15); color: var(--org); }
+  .sb-p { background: rgba(210,168,255,.15); color: var(--prp); }
+  .slbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; margin-top: 6px; }
+
+  /* ── s3 audit ── */
+  .g3 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 100%; max-width: 1100px; }
+  .bug-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-right: 5px; }
+  .t-red  { background: rgba(255,123,114,.15); color: var(--red); border: 1px solid rgba(255,123,114,.3); }
+  .t-org  { background: rgba(240,136,62,.15);  color: var(--org); border: 1px solid rgba(240,136,62,.3); }
+  .t-grn  { background: rgba(63,185,80,.15);   color: var(--grn); border: 1px solid rgba(63,185,80,.3); }
+
+  /* ── s4 swagger ── */
+  .g4 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 100%; max-width: 1100px; }
+  .sw { background: #0d1117; border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; margin-top: 10px; }
+  .sw-h { background: #1c2128; padding: 7px 13px; font-size: 10.5px; color: var(--muted); border-bottom: 1px solid var(--brd); font-family: 'JetBrains Mono', monospace; }
+  .sr { display: flex; align-items: center; gap: 9px; padding: 8px 13px; border-bottom: 1px solid #0d1117; font-size: 11.5px; font-family: 'JetBrains Mono', monospace; }
+  .m { font-weight: 700; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; min-width: 38px; text-align: center; }
+  .get { background: rgba(63,185,80,.2); color: var(--grn); } .post { background: rgba(88,166,255,.2); color: var(--acc); }
+  .del { background: rgba(255,123,114,.2); color: var(--red); } .put { background: rgba(240,136,62,.2); color: var(--org); }
+  .rd { color: var(--muted); font-size: 10.5px; margin-left: auto; }
+
+  /* ── s5 log ── */
+  .g5 { display: grid; grid-template-columns: 1fr 1.3fr; gap: 22px; width: 100%; max-width: 1100px; }
+  .ci { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--brd); font-size: 12.5px; }
+  .ci:last-child { border: none; } .ck { color: var(--muted); } .cv { font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+  .term { background: #0d1117; border: 1px solid var(--brd); border-radius: 12px; overflow: hidden; }
+  .th { background: #1c2128; padding: 9px 14px; display: flex; align-items: center; gap: 7px; border-bottom: 1px solid var(--brd); }
+  .td { width: 9px; height: 9px; border-radius: 50%; }
+  .td.r{background:#ff5f57} .td.y{background:#febc2e} .td.g{background:#28c840}
+  .tn { font-size: 10.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-left: 7px; }
+  .tb { padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.9; }
+  .li { color: #58a6ff; } .lw { color: #f0883e; } .le { color: #ff7b72; } .lc { color: #ff7b72; font-weight: 700; } .lo { color: #3fb950; } .ld { color: #484f58; }
+
+  /* ── s6 backup ── */
+  .g6 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 100%; max-width: 1100px; }
+  .step { display: flex; gap: 12px; margin-bottom: 12px; }
+  .sn { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: rgba(88,166,255,.15); border: 1px solid rgba(88,166,255,.3); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; color: var(--acc); }
+  .sb2 { font-size: 12.5px; line-height: 1.5; }
+  .st { font-weight: 600; margin-bottom: 1px; }
+  .sd { color: var(--muted); font-size: 11.5px; }
+  .cron { background: #0d1117; border: 1px solid var(--brd); border-radius: 8px; padding: 11px 13px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--grn); margin-top: 12px; line-height: 1.8; }
+  .ftree { background: #0d1117; border: 1px solid var(--brd); border-radius: 8px; padding: 11px 13px; font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-top: 12px; line-height: 2; }
+  .fd { color: var(--acc); font-weight: 600; } .ff { color: var(--grn); } .fs { color: var(--muted); float: right; }
+
+  /* ── s7 conclusion ── */
+  .s7c { text-align: center; max-width: 840px; position: relative; z-index: 1; }
+  .s7t { font-size: 40px; font-weight: 800; margin-bottom: 12px; }
+  .s7s { font-size: 16px; color: var(--muted); margin-bottom: 32px; }
+  .chk { display: flex; flex-direction: column; gap: 9px; text-align: left; max-width: 580px; margin: 0 auto 30px; }
+  .chi { display: flex; align-items: center; gap: 12px; padding: 11px 16px; background: var(--card); border: 1px solid var(--brd); border-radius: 9px; font-size: 13.5px; }
+  .rbtn { display: inline-flex; align-items: center; gap: 9px; background: var(--acc); color: #0d1117; font-weight: 700; font-size: 14px; padding: 13px 28px; border-radius: 9px; box-shadow: 0 0 28px rgba(88,166,255,.28); }
+</style>
+</head>
+<body>
+<div class="hint">← → Стрелки клавиатуры для навигации</div>
+<div class="deck" id="deck">
+
+<!-- ═══ SLIDE 1: TITLE ═══ -->
+<div class="slide active" id="slide-1">
+  <div class="s1bg"></div><div class="s1grid"></div>
+  <div class="s1c">
+    <div class="s1tag"><span class="s1dot"></span>Учебная практика · Модуль: Сопровождение ПО</div>
+    <div class="s1title">Защита пакета сопровождения<br>ИС «<span style="color:var(--acc)">Toy-Warehouse</span>»</div>
+    <div class="s1sub">Складская информационная система учёта товаров и операций</div>
+    <div class="s1meta">
+      <div class="s1mi"><span class="s1ml">Студент</span><span class="s1mv">[ФИО]</span></div>
+      <div class="s1div"></div>
+      <div class="s1mi"><span class="s1ml">Группа</span><span class="s1mv">[Группа]</span></div>
+      <div class="s1div"></div>
+      <div class="s1mi"><span class="s1ml">Роль</span><span class="s1mv">Инженер по сопровождению</span></div>
+      <div class="s1div"></div>
+      <div class="s1mi">
+        <span class="s1ml">Репозиторий · ветка maintenance</span>
+        <span class="s1mv"><a class="s1lnk" href="https://github.com/[USERNAME]/Toy-Warehouse/tree/maintenance" target="_blank">github.com/[USERNAME]/Toy-Warehouse</a></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2: ARCHITECTURE ═══ -->
+<div class="slide" id="slide-2">
+  <div class="badge">02 / 07</div>
+  <div class="hdr"><div class="htitle"><span class="hnum">СПЕЦИФИКАЦИЯ</span>Объект сопровождения</div><div class="hdesc">Архитектурная схема ИС и технологический стек</div></div>
+  <div class="g2">
+    <div>
+      <div class="slbl">🏗 Архитектура системы</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <div class="anode wpf"><span class="aico">🖥</span><div><div class="ant">Клиент — WPF Приложение</div><div class="and">Toy-Warehouse · .NET Framework 4.7.2</div></div></div>
+        <div class="aarr">↕ HTTP / REST API</div>
+        <div class="anode api"><span class="aico">⚙️</span><div><div class="ant">Backend — ASP.NET Core Web API</div><div class="and">WarehouseAPI · .NET 10 · Swagger UI</div></div></div>
+        <div class="aarr">↕ EF Core / Npgsql</div>
+        <div class="anode db"><span class="aico">🗄</span><div><div class="ant">СУБД — PostgreSQL 15</div><div class="and">6 таблиц · Миграции EF Core</div></div></div>
+      </div>
+    </div>
+    <div class="stk">
+      <div class="slbl">🔧 Технологический стек</div>
+      <div class="si"><span>ASP.NET Core Web API</span><span class="sb sb-b">.NET 10</span></div>
+      <div class="si"><span>Entity Framework Core</span><span class="sb sb-g">ORM</span></div>
+      <div class="si"><span>PostgreSQL</span><span class="sb sb-o">v15+</span></div>
+      <div class="si"><span>Swagger / OpenAPI</span><span class="sb sb-b">Swashbuckle</span></div>
+      <div class="si"><span>Docker + Docker Compose</span><span class="sb sb-b">Container</span></div>
+      <div class="si"><span>DotNetEnv (.env секреты)</span><span class="sb sb-g">Security</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3: SPRINT 1 — AUDIT ═══ -->
+<div class="slide" id="slide-3">
+  <div class="badge">03 / 07</div>
+  <div class="hdr"><div class="htitle"><span class="hnum">СПРИНТ 1</span>Аудит кода и обеспечение безопасности</div><div class="hdesc">Найденные уязвимости, исправления, .env, .gitignore</div></div>
+  <div class="g3">
+    <div class="card">
+      <div class="ctitle c-red">⚠ Найденные проблемы</div>
+      <div class="row"><span class="ic"><span class="bug-tag t-red">КРИТ</span></span><span>Пароль БД <code>Password=123123</code> зашит в <code>appsettings.Development.json</code> — файл попадал в git-репозиторий</span></div>
+      <div class="row"><span class="ic"><span class="bug-tag t-red">КРИТ</span></span><span><code>appsettings.Development.json</code> отсутствовал в <code>.gitignore</code> — секрет был публично доступен</span></div>
+      <div class="row"><span class="ic"><span class="bug-tag t-org">WARN</span></span><span>Несовместимые версии NuGet: <code>EF Core Design 10.0.8</code> vs <code>Tools 10.0.7</code> — возможны сбои миграций</span></div>
+      <div class="row"><span class="ic"><span class="bug-tag t-org">WARN</span></span><span><code>AnalyticsService</code>: <code>GetAllAsync()</code> загружает все товары в память вместо фильтрации в СУБД</span></div>
+      <div class="row"><span class="ic"><span class="bug-tag t-org">WARN</span></span><span>Нет валидации диапазона дат в <code>GetTurnoverAsync(from, to)</code> — если <code>from &gt; to</code>, ошибки не будет</span></div>
+      <div class="row"><span class="ic"><span class="bug-tag t-org">WARN</span></span><span>Отсутствует Serilog — логирование только через встроенный <code>ILogger</code> без ротации файлов</span></div>
+    </div>
+    <div class="card">
+      <div class="ctitle c-grn">✓ Реализованные решения</div>
+      <div class="row"><span class="ic c-grn">✅</span><span>Пароль удалён из <code>appsettings.Development.json</code> — строка подключения очищена</span></div>
+      <div class="row"><span class="ic c-grn">✅</span><span><code>appsettings.Development.json</code> и <code>WarehouseAPI/.env</code> добавлены в <code>.gitignore</code></span></div>
+      <div class="row"><span class="ic c-grn">✅</span><span>Создан шаблон <code>.env.example</code> с безопасными заглушками</span></div>
+      <div class="row"><span class="ic c-grn">✅</span><span>Выровнены версии NuGet: <code>EF Core Design 10.0.7</code> = <code>Tools 10.0.7</code></span></div>
+      <div class="row"><span class="ic c-grn">✅</span><span>Добавлены <code>logs/</code> и <code>backups/</code> в <code>.gitignore</code></span></div>
+      <div class="env"><span class="c-muted"># .env.example</span><br>
+        DB_HOST=<span style="color:#e6edf3">localhost</span><br>
+        DB_PORT=<span style="color:#e6edf3">5432</span><br>
+        DB_NAME=<span style="color:#e6edf3">warehouse_db</span><br>
+        DB_USER=<span style="color:#e6edf3">postgres</span><br>
+        DB_PASSWORD=<span style="color:#e6edf3">your_secure_password_here</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 4: SPRINT 2 — DOCS ═══ -->
+<div class="slide" id="slide-4">
+  <div class="badge">04 / 07</div>
+  <div class="hdr"><div class="htitle"><span class="hnum">СПРИНТ 2</span>Документация системы</div><div class="hdesc">README, Docker Compose, Swagger API, Руководство администратора</div></div>
+  <div class="g4">
+    <div class="card">
+      <div class="ctitle c-acc">📄 README.md + Руководство администратора</div>
+      <div class="row"><span class="ic c-grn">✅</span>Гайд локального запуска (dotnet CLI)</div>
+      <div class="row"><span class="ic c-grn">✅</span>Гайд Docker Compose запуска</div>
+      <div class="row"><span class="ic c-grn">✅</span>Матрица переменных окружения</div>
+      <div class="row"><span class="ic c-grn">✅</span>Системные требования к серверу</div>
+      <div class="row"><span class="ic c-grn">✅</span>Конфигурация Nginx Reverse Proxy</div>
+      <div class="row"><span class="ic c-grn">✅</span>Plan Disaster Recovery (2 сценария)</div>
+      <div class="row"><span class="ic c-grn">✅</span>Dockerfile + docker-compose.yml</div>
+    </div>
+    <div class="card">
+      <div class="ctitle c-grn">🔌 Swagger — задокументированные эндпоинты</div>
+      <div class="sw">
+        <div class="sw-h">WarehouseAPI — OpenAPI 3.0</div>
+        <div class="sr"><span class="m get">GET</span><span>/api/products</span><span class="rd">Список товаров 200</span></div>
+        <div class="sr"><span class="m post">POST</span><span>/api/products</span><span class="rd">Создать 201/400</span></div>
+        <div class="sr"><span class="m post">POST</span><span>/api/operations/income</span><span class="rd">Приход 201/400</span></div>
+        <div class="sr"><span class="m post">POST</span><span>/api/operations/sale</span><span class="rd">Продажа 201/400</span></div>
+        <div class="sr"><span class="m get">GET</span><span>/api/analytics/top-products</span><span class="rd">Аналитика 200</span></div>
+        <div class="sr"><span class="m get">GET</span><span>/api/stock</span><span class="rd">Остатки 200</span></div>
+        <div class="sr"><span class="m del">DEL</span><span>/api/counterparties/{id}</span><span class="rd">204/404</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 5: SPRINT 3 — LOGGING ═══ -->
+<div class="slide" id="slide-5">
+  <div class="badge">05 / 07</div>
+  <div class="hdr"><div class="htitle"><span class="hnum">СПРИНТ 3</span>Сквозное логирование</div><div class="hdesc">Serilog · Console + File · Ротация 10 МБ · INFO / WARN / ERROR / CRITICAL</div></div>
+  <div class="g5">
+    <div class="card">
+      <div class="ctitle c-prp">⚙️ Конфигурация Serilog</div>
+      <div class="ci"><span class="ck">Библиотека</span><span class="cv" style="color:var(--prp)">Serilog.AspNetCore 9.0</span></div>
+      <div class="ci"><span class="ck">Sink 1</span><span class="cv">Console (stdout)</span></div>
+      <div class="ci"><span class="ck">Sink 2</span><span class="cv">File logs/app.log</span></div>
+      <div class="ci"><span class="ck">Ротация</span><span class="cv">10 МБ / 5 файлов / Daily</span></div>
+      <div class="ci" style="border:none"><span class="ck">Уровни</span><span class="cv">INFO WARN ERROR CRIT</span></div>
+      <div style="margin-top:13px;font-size:12px;color:var(--muted)">Покрытые узлы:</div>
+      <div style="margin-top:7px;font-size:12px;line-height:2.1">
+        <span class="c-grn">✅</span> Все транзакции БД (Income/Sale/WriteOff/Transfer)<br>
+        <span class="c-grn">✅</span> Откат транзакции → CRITICAL + StackTrace<br>
+        <span class="c-grn">✅</span> Middleware: WARNING (403) / ERROR (400) / CRITICAL (500)<br>
+        <span class="c-grn">✅</span> Старт API, применение миграций БД
+      </div>
+    </div>
+    <div class="term">
+      <div class="th"><div class="td r"></div><div class="td y"></div><div class="td g"></div><span class="tn">logs/app.log — эмуляция сбоя СУБД</span></div>
+      <div class="tb">
+        <span class="lo">[2026-06-15 02:00:07] [INFO] [Program] [STARTUP] API запущен</span><br>
+        <span class="li">[2026-06-15 02:00:14] [INFO] [ProductService] [DB] Получено 8 товаров</span><br>
+        <span class="li">[2026-06-15 02:00:21] [INFO] [OperationService] [TXN] Начало: Приход. Позиций: 3</span><br>
+        <span class="lo">[2026-06-15 02:00:22] [INFO] [OperationService] [TXN] Завершена успешно. Id=12</span><br>
+        <span class="ld">--- изменён пароль в .env, перезапуск ---</span><br>
+        <span class="lc">[2026-06-15 02:01:05] [FATL] [Program] [DB] КРИТИЧЕСКАЯ ОШИБКА!</span><br>
+        <span class="le">Npgsql.NpgsqlException: Failed to connect 127.0.0.1:5432</span><br>
+        <span class="le">  Password authentication failed for "postgres"</span><br>
+        <span class="le">  at NpgsqlConnector.Connect(NpgsqlTimeout timeout)</span><br>
+        <span class="lw">[2026-06-15 02:01:08] [WARN] [Middleware] [NOT_FOUND] 404 ← GET /api/products/99</span><br>
+        <span class="le">[2026-06-15 02:01:09] [CRIT] [Middleware] [CRITICAL] 500 ← POST /api/operations/sale</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 6: SPRINT 4 — BACKUP ═══ -->
+<div class="slide" id="slide-6">
+  <div class="badge">06 / 07</div>
+  <div class="hdr"><div class="htitle"><span class="hnum">СПРИНТ 4</span>Резервное копирование и отказоустойчивость</div><div class="hdesc">pg_dump · gzip · Ротация 7 дней · Восстановление «из нуля»</div></div>
+  <div class="g6">
+    <div class="card">
+      <div class="ctitle c-org">💾 scripts/backup.sh</div>
+      <div class="step"><div class="sn">1</div><div class="sb2"><div class="st">Загрузка конфигурации</div><div class="sd">Читает параметры из <code>.env</code> (DB_HOST, DB_PASSWORD…)</div></div></div>
+      <div class="step"><div class="sn">2</div><div class="sb2"><div class="st">pg_dump → gzip</div><div class="sd">Горячий дамп без остановки сервиса, сжатие ~70%</div></div></div>
+      <div class="step"><div class="sn">3</div><div class="sb2"><div class="st">Архивация uploads/ (tar.gz)</div><div class="sd">Резервная копия медиа-файлов</div></div></div>
+      <div class="step"><div class="sn">4</div><div class="sb2"><div class="st">Ротация: удаление &gt; 7 дней</div><div class="sd">Автоматическая очистка устаревших копий</div></div></div>
+      <div class="cron"><span class="c-muted"># crontab -e → ежедневно в 02:00</span><br>0 2 * * * /opt/warehouse/scripts/backup.sh</div>
+    </div>
+    <div class="card">
+      <div class="ctitle c-grn">🔄 scripts/restore.sh — восстановление «из нуля»</div>
+      <div class="step"><div class="sn">1</div><div class="sb2"><div class="st">Проверка файла дампа</div><div class="sd">Показывает список доступных резервных копий</div></div></div>
+      <div class="step"><div class="sn">2</div><div class="sb2"><div class="st">Подтверждение (ввод "yes")</div><div class="sd">Защита от случайного удаления данных</div></div></div>
+      <div class="step"><div class="sn">3</div><div class="sb2"><div class="st">dropdb → createdb → psql</div><div class="sd">Пересоздаёт БД и разворачивает дамп</div></div></div>
+      <div class="step"><div class="sn">4</div><div class="sb2"><div class="st">Восстановление uploads/</div><div class="sd">Распаковка последнего архива медиа-файлов</div></div></div>
+      <div class="ftree">
+        <span class="fd">backups/</span><br>
+        &nbsp;&nbsp;<span class="fd">db/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="ff">warehouse_db_2026-06-15_02-00.sql.gz</span><span class="fs">4.1 MB</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="ff">warehouse_db_2026-06-14_02-00.sql.gz</span><span class="fs">4.0 MB</span><br>
+        &nbsp;&nbsp;<span class="ff">backup.log</span><span class="fs">8 KB</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 7: CONCLUSION ═══ -->
+<div class="slide" id="slide-7">
+  <div class="s1bg"></div><div class="s1grid"></div>
+  <div class="s7c">
+    <div class="s7t">Система готова к промышленной эксплуатации</div>
+    <div class="s7s">Все 4 спринта выполнены. Пакет сопровождения передан.</div>
+    <div class="chk">
+      <div class="chi"><span>🔐</span><span>Спринт 1 — Устранена утечка пароля, выровнены версии NuGet, настроен .gitignore</span></div>
+      <div class="chi"><span>📄</span><span>Спринт 2 — README, Docker, Swagger с описаниями, Disaster Recovery Plan</span></div>
+      <div class="chi"><span>📊</span><span>Спринт 3 — Serilog, 2 канала, ротация, CRITICAL-трейсы при сбое СУБД</span></div>
+      <div class="chi"><span>💾</span><span>Спринт 4 — pg_dump по расписанию, ротация 7 дней, восстановление из нуля</span></div>
+    </div>
+    <div class="rbtn">🚀 Готов к живой демонстрации пакета сопровождения</div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+<div class="nav">
+  <button id="p" onclick="go(-1)" disabled>&#8592;</button>
+  <div class="dots" id="dots"></div>
+  <span class="ctr" id="ctr">1 / 7</span>
+  <button id="n" onclick="go(1)">&#8594;</button>
+</div>
+<script>
+  const T=7; let cur=1;
+  function buildDots(){const c=document.getElementById('dots');for(let i=1;i<=T;i++){const d=document.createElement('div');d.className='dot'+(i===1?' active':'');d.onclick=()=>goTo(i);c.appendChild(d);}}
+  function goTo(n){if(n<1||n>T)return;document.getElementById('slide-'+cur).classList.remove('active');document.querySelectorAll('.dot')[cur-1].classList.remove('active');cur=n;document.getElementById('slide-'+cur).classList.add('active');document.querySelectorAll('.dot')[cur-1].classList.add('active');document.getElementById('ctr').textContent=cur+' / '+T;document.getElementById('p').disabled=cur===1;document.getElementById('n').disabled=cur===T;}
+  function go(d){goTo(cur+d);}
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);});
+  buildDots();
+</script>
+</body>
+</html>

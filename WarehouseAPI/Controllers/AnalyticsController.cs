@@ -5,8 +5,6 @@ namespace WarehouseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
-[Consumes("application/json")]
 public class AnalyticsController : ControllerBase
 {
     private readonly IAnalyticsService _analyticsService;
@@ -51,13 +49,7 @@ public class AnalyticsController : ControllerBase
         var result = await _analyticsService.GetTurnoverAsync(from, to);
         return Ok(result);
     }
-    private readonly ILogger<AnalyticsController> _logger;
 
-    public AnalyticsController(..., ILogger<AnalyticsController> logger)
-    {
-        ...
-    _logger = logger;
-    }
     // GET api/analytics/low-stock?minQuantity=5
     [HttpGet("low-stock")]
     public async Task<IActionResult> GetLowStock([FromQuery] decimal minQuantity = 5)

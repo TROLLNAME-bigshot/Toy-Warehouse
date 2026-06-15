@@ -6,8 +6,6 @@ namespace WarehouseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
-[Consumes("application/json")]
 public class OperationsController : ControllerBase
 {
     private readonly IOperationService _operationService;
@@ -40,13 +38,7 @@ public class OperationsController : ControllerBase
         var result = await _operationService.IncomeAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
-    private readonly ILogger<OperationsController> _logger;
 
-    public OperationsController(..., ILogger<OperationsController> logger)
-    {
-        ...
-    _logger = logger;
-    }
     // POST api/operations/sale
     [HttpPost("sale")]
     public async Task<IActionResult> Sale([FromBody] SaleCreateDto dto)

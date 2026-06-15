@@ -5,36 +5,28 @@ namespace WarehouseAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
-[Consumes("application/json")]
 public class StockController : ControllerBase
 {
-    private readonly IStockService _stockService;
+	private readonly IStockService _stockService;
 
-    public StockController(IStockService stockService)
-    {
-        _stockService = stockService;
-    }
+	public StockController(IStockService stockService)
+	{
+		_stockService = stockService;
+	}
 
-    // GET api/stock
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var stocks = await _stockService.GetAllAsync();
-        return Ok(stocks);
-    }
-    private readonly ILogger<StockController> _logger;
+	// GET api/stock
+	[HttpGet]
+	public async Task<IActionResult> GetAll()
+	{
+		var stocks = await _stockService.GetAllAsync();
+		return Ok(stocks);
+	}
 
-    public StockController(..., ILogger<StockController> logger)
-    {
-        ...
-    _logger = logger;
-    }
-    // GET api/stock/5
-    [HttpGet("{productId:int}")]
-    public async Task<IActionResult> GetByProductId(int productId)
-    {
-        var stock = await _stockService.GetByProductIdAsync(productId);
-        return stock is null ? NotFound() : Ok(stock);
-    }
+	// GET api/stock/5
+	[HttpGet("{productId:int}")]
+	public async Task<IActionResult> GetByProductId(int productId)
+	{
+		var stock = await _stockService.GetByProductIdAsync(productId);
+		return stock is null ? NotFound() : Ok(stock);
+	}
 }

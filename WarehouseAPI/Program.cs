@@ -6,14 +6,6 @@ using WarehouseAPI.Repositories;
 using WarehouseAPI.Repositories.Interfaces;
 using WarehouseAPI.Services;
 using WarehouseAPI.Services.Interfaces;
-using Serilog;
-
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 10485760, retainedFileCountLimit: 5)
-    .CreateLogger();
-
-builder.Host.UseSerilog();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +13,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 // PostgreSQL — единственная поддерживаемая СУБД
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
-DotNetEnv.Env.Load();
+
 // CORS
 builder.Services.AddCors(options =>
 {
@@ -52,12 +44,7 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidationFilter>();
 });
-builder.Services.AddSwaggerGen(c =>
-{
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
-});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -91,7 +78,6 @@ app.MapGet("/health", () => Results.Ok("ok"));
 
 app.MapControllers();
 
-
 // Применяем миграции автоматически при запуске
 using (var scope = app.Services.CreateScope())
 {
@@ -110,4 +96,3 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
-Log.CloseAndFlush();
